@@ -1,0 +1,686 @@
+"use client";
+import React, { useState, useEffect, useRef } from 'react';
+import { 
+  Terminal, Server, Code, Activity, GitBranch, 
+  CheckCircle, AlertCircle, Clock, Cloud, Database, 
+  Cpu, Globe, ExternalLink, Github, Linkedin, Mail,
+  MapPin, Send, ChevronRight, Download, Sun, Moon,
+  GraduationCap, Wrench, Users, Layers
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+
+// --- Configurations ---
+
+const PERSONAL_INFO = {
+  name: "Muhammad Saqib Afzal",
+  title: "Software Engineering Graduate",
+  subtitle: "Transitioning to DevOps & Cloud Engineering",
+  email: "saqibchauhdary109@gmail.com",
+  location: "Lahore, Pakistan",
+  github: "https://github.com/Sonu7552",
+  linkedin: "https://www.linkedin.com/in/muhammad-saqib-afzal-90a799234/"
+};
+
+const EDUCATION = [
+  {
+    degree: "Bachelor of Science in Software Engineering",
+    school: "Superior University, Lahore",
+    year: "2020 - 2024",
+    desc: "Focused on Software Architecture, SDLC, and Cloud Computing."
+  },
+  {
+    degree: "Intermediate in Pre-Engineering",
+    school: "Superior College, Lahore",
+    year: "2018 - 2020",
+    desc: "Foundation in Mathematics and Physics."
+  }
+];
+
+const EXPERIENCE = [
+  {
+    company: "University of Lahore (IT Centre)",
+    role: "DevOps Intern",
+    period: "Current",
+    desc: "Implementing CI/CD pipelines using Jenkins and GitHub Actions. Monitoring system performance and analyzing logs to resolve infrastructure issues. Automating tasks using Bash scripting.",
+    tags: ["Jenkins", "Docker", "Bash", "Log Analysis"]
+  },
+  {
+    company: "Freelance / Upwork",
+    role: "Web & App Developer",
+    period: "2023 - Present",
+    desc: "Developing responsive web apps using React.js/Next.js and Android apps using Java/XML. deploying applications on Vercel and Netlify.",
+    tags: ["React", "Next.js", "Android (Java)", "Firebase"]
+  }
+];
+
+const SKILLS = {
+  devops: [
+    { name: "Linux (Ubuntu/CentOS)", level: 75 },
+    { name: "Docker & Containers", level: 70 },
+    { name: "Jenkins & GitHub Actions", level: 65 },
+    { name: "Bash Scripting", level: 60 },
+    { name: "AWS (EC2/S3)", level: 50 }
+  ],
+  web: [
+    { name: "React.js / Next.js", level: 85 },
+    { name: "Node.js / REST APIs", level: 75 },
+    { name: "Android (Java/XML)", level: 70 },
+    { name: "MySQL / Firebase", level: 80 }
+  ]
+};
+
+const TOOLS = [
+  "VS Code", "Android Studio", "Figma", "Canva", "Git", "Postman"
+];
+
+const PROJECTS = [
+  {
+    title: "Automated Deployment Pipeline",
+    type: "DevOps",
+    desc: "Designed a complete CI/CD pipeline with automated testing, building, and deployment stages, significantly reducing manual deployment time.",
+    stack: ["Jenkins", "Docker", "GitHub Actions"],
+    status: "Production",
+  },
+  {
+    title: "Management Info System",
+    type: "Full Stack",
+    desc: "Developed an academic management system with real-time data processing, CRUD operations, and role-based access control.",
+    stack: ["React", "Node.js", "MySQL"],
+    status: "Completed",
+  },
+  {
+    title: "E-Commerce Platform",
+    type: "Web App",
+    desc: "Built a feature-rich e-commerce platform with user authentication, shopping cart functionality, payment integration, and admin dashboards.",
+    stack: ["Next.js", "Firebase", "Stripe"],
+    status: "Live",
+  },
+  {
+    title: "Medical Image Diagnosis (FYP)",
+    type: "Mobile App + ML",
+    desc: "Final Year Project utilizing automated algorithms to diagnose medical issues from images. Built native Android logic.",
+    stack: ["Java", "XML", "Kotlin", "ML Models"],
+    status: "Completed",
+  }
+];
+
+// --- Animation Variants ---
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: { 
+    opacity: 1,
+    transition: { staggerChildren: 0.1 }
+  }
+};
+
+const itemVariants = {
+  hidden: { y: 20, opacity: 0 },
+  visible: { 
+    y: 0, 
+    opacity: 1,
+    transition: { type: "spring", stiffness: 100 }
+  }
+};
+
+// --- Components ---
+
+const PipelineStep = ({ label, status, duration, isDark }: { label: string, status: 'success' | 'running' | 'pending' | 'failed', duration?: string, isDark: boolean }) => {
+  const getColors = () => {
+    if (isDark) {
+        switch(status) {
+          case 'success': return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/50';
+          case 'running': return 'bg-blue-500/10 text-blue-400 border-blue-500/50 animate-pulse';
+          case 'failed': return 'bg-rose-500/10 text-rose-400 border-rose-500/50';
+          default: return 'bg-slate-800 text-slate-500 border-slate-700';
+        }
+    } else {
+        switch(status) {
+          case 'success': return 'bg-emerald-100 text-emerald-700 border-emerald-200';
+          case 'running': return 'bg-blue-100 text-blue-700 border-blue-200 animate-pulse';
+          case 'failed': return 'bg-rose-100 text-rose-700 border-rose-200';
+          default: return 'bg-slate-100 text-slate-400 border-slate-200';
+        }
+    }
+  };
+
+  return (
+    <div className={`flex flex-col items-center justify-center p-3 rounded border ${getColors()} min-w-[100px] transition-all`}>
+      <div className="text-xs font-mono mb-1">{label}</div>
+      <div className="mb-1">
+        {status === 'success' && <CheckCircle size={16} />}
+        {status === 'running' && <Activity size={16} className="animate-spin" />}
+        {status === 'pending' && <Clock size={16} />}
+        {status === 'failed' && <AlertCircle size={16} />}
+      </div>
+      {duration && <div className="text-[10px] opacity-75">{duration}</div>}
+    </div>
+  );
+};
+
+const LogViewer = ({ isDark }: { isDark: boolean }) => {
+  const [logs, setLogs] = useState<string[]>([]);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const messages = [
+      "[INFO] Triggering Vercel deployment hook...",
+      "[INFO] Fetching latest commit from GitHub...",
+      "[INFO] Installing dependencies (npm ci)...",
+      "[SUCCESS] Node modules installed.",
+      "[INFO] Running 'next build'...",
+      "[INFO] Optimizing static assets...",
+      "[SUCCESS] Build complete. Output: .next/",
+      "[INFO] Deploying to Edge Network...",
+      "[SUCCESS] 🚀 Deployment Live: https://saqib-devops.vercel.app"
+    ];
+    
+    let i = 0;
+    const interval = setInterval(() => {
+      if (i < messages.length) {
+        setLogs(prev => [...prev, `> ${new Date().toISOString().split('T')[1].split('.')[0]} ${messages[i]}`]);
+        i++;
+      } else {
+        setLogs([]); 
+        i = 0;
+      }
+    }, 2000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [logs]);
+
+  const containerClass = isDark ? "bg-slate-950 border-slate-800" : "bg-slate-900 border-slate-300 text-slate-100";
+
+  return (
+    <div className={`${containerClass} rounded-lg border p-4 font-mono text-xs h-64 overflow-hidden flex flex-col shadow-inner transition-colors`}>
+      <div className="flex items-center justify-between mb-2 border-b border-slate-700 pb-2">
+        <span className="text-slate-400 flex items-center gap-2"><Terminal size={12}/> build-logs-prod</span>
+        <div className="flex space-x-1">
+          <div className="w-2 h-2 rounded-full bg-slate-600"></div>
+          <div className="w-2 h-2 rounded-full bg-slate-600"></div>
+        </div>
+      </div>
+      <div ref={scrollRef} className="overflow-y-auto flex-1 space-y-1 text-emerald-500/90 font-mono">
+        <AnimatePresence>
+          {logs.map((log, idx) => (
+            <motion.div 
+              key={idx}
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              className="break-all"
+            >
+              {log}
+            </motion.div>
+          ))}
+        </AnimatePresence>
+        <div className="animate-pulse text-emerald-500">_</div>
+      </div>
+    </div>
+  );
+};
+
+const MetricCard = ({ label, value, unit, trend, color = "text-white", isDark }: any) => {
+    const cardClass = isDark 
+        ? "bg-slate-900 border-slate-800 shadow-lg" 
+        : "bg-white border-slate-200 shadow-lg hover:shadow-xl";
+    
+    const textColor = (!isDark && color === "text-white") ? "text-slate-900" : color;
+
+    return (
+      <motion.div 
+        whileHover={{ scale: 1.02 }}
+        className={`${cardClass} p-4 rounded-lg border transition-colors`}
+      >
+        <div className="text-slate-500 text-xs uppercase tracking-wider mb-1">{label}</div>
+        <div className="flex items-baseline space-x-1">
+          <span className={`text-2xl font-bold ${textColor}`}>{value}</span>
+          <span className="text-xs text-slate-400">{unit}</span>
+        </div>
+        {trend && (
+          <div className={`text-xs mt-2 ${trend > 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+            {trend > 0 ? '↑' : '↓'} {Math.abs(trend)}% vs last hr
+          </div>
+        )}
+      </motion.div>
+    );
+};
+
+// --- Main Application ---
+
+export default function Portfolio() {
+  const [activeSection, setActiveSection] = useState('portfolio');
+  const [metrics, setMetrics] = useState({ cpu: 12, mem: 45, req: 120 });
+  const [isDarkMode, setIsDarkMode] = useState(true);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setMetrics({
+        cpu: Math.floor(Math.random() * 30) + 5,
+        mem: Math.floor(Math.random() * 10) + 40,
+        req: Math.floor(Math.random() * 50) + 100,
+      });
+    }, 3000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // --- Helper Classes for Theme ---
+  const bgClass = isDarkMode ? "bg-slate-950 text-slate-200 selection:bg-emerald-500/30" : "bg-slate-50 text-slate-800 selection:bg-emerald-500/20";
+  const navClass = isDarkMode ? "bg-slate-950/80 border-white/5" : "bg-white/80 border-slate-200 shadow-sm";
+  const cardClass = isDarkMode ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200 shadow-md hover:shadow-lg";
+  const headingClass = isDarkMode ? "text-white" : "text-slate-900";
+  const subHeadingClass = isDarkMode ? "text-slate-300" : "text-slate-700";
+  const textMutedClass = isDarkMode ? "text-slate-400" : "text-slate-500";
+  const inputClass = isDarkMode ? "bg-slate-950 border-slate-800 text-white" : "bg-slate-50 border-slate-300 text-slate-900";
+
+  return (
+    <div className={`min-h-screen font-sans transition-colors duration-300 ${bgClass}`}>
+      
+      {/* Navbar */}
+      <nav className={`sticky top-0 z-50 backdrop-blur-xl border-b transition-colors duration-300 ${navClass}`}>
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center gap-2 cursor-pointer" onClick={() => setActiveSection('portfolio')}>
+              <Terminal className="text-emerald-500" size={24} />
+              <span className="font-bold text-xl tracking-tight">Saqib.<span className="text-emerald-500">DevOps</span></span>
+            </div>
+            
+            <div className="flex items-center gap-4">
+                <button 
+                    onClick={() => setIsDarkMode(!isDarkMode)}
+                    className={`p-2 rounded-full transition-all ${isDarkMode ? 'bg-slate-800 text-yellow-400 hover:bg-slate-700' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+                >
+                    {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
+                </button>
+
+                <div className="hidden md:flex items-baseline space-x-2">
+                {['portfolio', 'dashboard'].map((tab) => (
+                    <button
+                        key={tab}
+                        onClick={() => setActiveSection(tab)}
+                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 capitalize flex items-center gap-2
+                        ${activeSection === tab 
+                            ? 'bg-emerald-500/10 text-emerald-500 font-bold' 
+                            : `${textMutedClass} hover:bg-emerald-500/5 hover:text-emerald-500`}`}
+                    >
+                        {tab === 'dashboard' && <Activity size={16} />}
+                        {tab}
+                    </button>
+                ))}
+                <a 
+                    href="#contact" 
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${textMutedClass} hover:text-emerald-500`}
+                >
+                    Contact
+                </a>
+                </div>
+            </div>
+          </div>
+        </div>
+      </nav>
+
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <AnimatePresence mode="wait">
+        
+        {activeSection === 'portfolio' ? (
+          <motion.div 
+            key="portfolio"
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+            exit={{ opacity: 0, y: -20 }}
+            className="space-y-24"
+          >
+            
+            {/* Hero Section */}
+            <motion.section variants={itemVariants} className="relative py-10 sm:py-20">
+              <div className="absolute top-0 right-0 -z-10 opacity-20 animate-pulse">
+                 <Cloud size={300} className="text-emerald-900" />
+              </div>
+              <div className="max-w-3xl">
+                <motion.div 
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-500 text-sm font-mono mb-6 border border-emerald-500/20"
+                >
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                  </span>
+                  Actively Looking for DevOps Roles
+                </motion.div>
+                <h1 className={`text-5xl sm:text-7xl font-extrabold tracking-tight mb-6 leading-tight ${headingClass}`}>
+                  Hi, I'm <span className="text-emerald-500">{PERSONAL_INFO.name}</span>.
+                </h1>
+                <h2 className={`text-2xl sm:text-4xl font-bold mb-6 ${subHeadingClass}`}>
+                   {PERSONAL_INFO.title} <br/>
+                   <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-500 to-cyan-500">
+                    Transitioning to DevOps
+                  </span>
+                </h2>
+                <p className={`text-lg mb-8 leading-relaxed max-w-2xl ${textMutedClass}`}>
+                  I am a recent graduate with a strong foundation in Software Engineering, now automating infrastructure. 
+                  My goal is to bridge the gap between code and deployment using <strong>Docker</strong>, <strong>AWS</strong>, and <strong>CI/CD</strong>.
+                </p>
+                <div className="flex gap-4">
+                  <button 
+                    onClick={() => setActiveSection('dashboard')}
+                    className="px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg transition-all flex items-center gap-2 shadow-lg shadow-emerald-900/20 hover:-translate-y-1"
+                  >
+                    View My Skills Dashboard <ChevronRight size={18}/>
+                  </button>
+                  <a 
+                    href="/cv.pdf" 
+                    download="Muhammad_Saqib_CV.pdf"
+                    className={`px-6 py-3 border hover:bg-emerald-500/5 rounded-lg transition-all font-medium flex items-center gap-2 ${isDarkMode ? 'border-slate-700 text-slate-300 hover:border-slate-500' : 'border-slate-300 text-slate-700 hover:border-emerald-500'}`}
+                  >
+                    <Download size={18} /> Download Resume
+                  </a>
+                </div>
+              </div>
+            </motion.section>
+
+            {/* Education Section (New) */}
+             <motion.section variants={itemVariants}>
+              <h2 className={`text-3xl font-bold mb-8 flex items-center gap-3 ${headingClass}`}>
+                <GraduationCap className="text-emerald-500" /> Education
+              </h2>
+              <div className="grid md:grid-cols-2 gap-6">
+                {EDUCATION.map((edu, index) => (
+                  <div key={index} className={`${cardClass} p-6 rounded-xl border shadow-sm transition-all`}>
+                    <div className={`font-bold text-lg ${headingClass}`}>{edu.school}</div>
+                    <div className={`text-emerald-500 text-sm font-mono mb-2`}>{edu.year}</div>
+                    <div className={`font-semibold ${subHeadingClass} mb-2`}>{edu.degree}</div>
+                    <p className={`${textMutedClass} text-sm`}>{edu.desc}</p>
+                  </div>
+                ))}
+              </div>
+            </motion.section>
+
+            {/* Skills Section */}
+            <motion.section variants={itemVariants} id="skills">
+              <div className="flex items-center gap-2 mb-8">
+                <Cpu className="text-emerald-500" />
+                <h2 className={`text-3xl font-bold ${headingClass}`}>Technical Stack</h2>
+              </div>
+              
+              <div className="grid md:grid-cols-2 gap-12">
+                <div className={`${cardClass} p-6 rounded-2xl transition-all`}>
+                  <h3 className={`text-xl font-semibold mb-6 flex items-center gap-2 ${headingClass}`}>
+                    <Globe className="text-blue-500" size={20} /> Software Development
+                  </h3>
+                  <div className="space-y-4">
+                    {SKILLS.web.map(skill => (
+                      <div key={skill.name}>
+                        <div className="flex justify-between text-sm mb-1">
+                          <span className={subHeadingClass}>{skill.name}</span>
+                          <span className={textMutedClass}>{skill.level}%</span>
+                        </div>
+                        <div className={`h-2 rounded-full overflow-hidden ${isDarkMode ? 'bg-slate-800' : 'bg-slate-200'}`}>
+                          <motion.div 
+                            initial={{ width: 0 }}
+                            whileInView={{ width: `${skill.level}%` }}
+                            transition={{ duration: 1, ease: "easeOut" }}
+                            className="h-full bg-blue-500 rounded-full" 
+                          ></motion.div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className={`${cardClass} p-6 rounded-2xl transition-all border-emerald-500/20`}>
+                  <h3 className={`text-xl font-semibold mb-6 flex items-center gap-2 ${headingClass}`}>
+                    <GitBranch className="text-emerald-500" size={20} /> DevOps Learning
+                  </h3>
+                  <div className="space-y-4">
+                    {SKILLS.devops.map(skill => (
+                      <div key={skill.name}>
+                        <div className="flex justify-between text-sm mb-1">
+                          <span className={subHeadingClass}>{skill.name}</span>
+                          <span className={textMutedClass}>{skill.level}%</span>
+                        </div>
+                        <div className={`h-2 rounded-full overflow-hidden ${isDarkMode ? 'bg-slate-800' : 'bg-slate-200'}`}>
+                          <motion.div 
+                            initial={{ width: 0 }}
+                            whileInView={{ width: `${skill.level}%` }}
+                            transition={{ duration: 1, ease: "easeOut" }}
+                            className="h-full bg-emerald-500 rounded-full"
+                          ></motion.div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              
+              {/* Tools Banner (New) */}
+              <div className={`mt-8 ${cardClass} p-6 rounded-xl border flex flex-col md:flex-row items-center justify-between gap-4`}>
+                  <div className="flex items-center gap-2 font-bold text-lg">
+                    <Wrench className="text-emerald-500" />
+                    <span className={headingClass}>Tools & Platforms:</span>
+                  </div>
+                  <div className="flex flex-wrap gap-2 justify-center">
+                    {TOOLS.map(tool => (
+                      <span key={tool} className={`px-3 py-1 rounded-full text-sm font-mono ${isDarkMode ? 'bg-slate-800 text-slate-300' : 'bg-slate-200 text-slate-700'}`}>
+                        {tool}
+                      </span>
+                    ))}
+                  </div>
+              </div>
+            </motion.section>
+
+            {/* Projects Section */}
+            <motion.section variants={itemVariants}>
+               <h2 className={`text-3xl font-bold mb-8 ${headingClass}`}>Projects & Portfolio</h2>
+               <div className="grid md:grid-cols-2 gap-6">
+                  {PROJECTS.map((project, i) => (
+                    <motion.div 
+                      key={i} 
+                      whileHover={{ y: -5 }}
+                      className={`group ${cardClass} hover:border-emerald-500/50 rounded-xl p-6 transition-all`}
+                    >
+                      <div className="flex justify-between items-start mb-4">
+                        <div className={`p-2 rounded-lg ${project.type.includes('DevOps') ? 'bg-emerald-500/10 text-emerald-500' : 'bg-blue-500/10 text-blue-500'}`}>
+                          {project.type.includes('DevOps') ? <Server size={20}/> : <Code size={20}/>}
+                        </div>
+                        <span className={`text-xs px-2 py-1 rounded-full border ${isDarkMode ? 'bg-slate-800 text-slate-400 border-slate-700' : 'bg-slate-100 text-slate-600 border-slate-200'}`}>
+                          {project.status}
+                        </span>
+                      </div>
+                      <h3 className={`text-lg font-bold mb-2 group-hover:text-emerald-500 transition-colors ${headingClass}`}>{project.title}</h3>
+                      <p className={`${textMutedClass} text-sm mb-4`}>{project.desc}</p>
+                      <div className="flex flex-wrap gap-2">
+                        {project.stack.map(tech => (
+                          <span key={tech} className="text-xs font-mono text-emerald-600 bg-emerald-500/10 px-2 py-1 rounded">
+                            {tech}
+                          </span>
+                        ))}
+                      </div>
+                    </motion.div>
+                  ))}
+               </div>
+            </motion.section>
+
+            {/* Experience Timeline */}
+            <motion.section variants={itemVariants}>
+              <h2 className={`text-3xl font-bold mb-8 ${headingClass}`}>Experience</h2>
+              <div className={`space-y-8 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent ${isDarkMode ? 'before:via-slate-700' : 'before:via-slate-300'} before:to-transparent`}>
+                {EXPERIENCE.map((job, index) => (
+                  <div key={index} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
+                    <div className={`flex items-center justify-center w-10 h-10 rounded-full border shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 transition-colors ${isDarkMode ? 'border-slate-700 bg-slate-900 group-hover:border-emerald-500 group-hover:text-emerald-400' : 'border-slate-200 bg-white text-slate-500 group-hover:border-emerald-500 group-hover:text-emerald-600'}`}>
+                      <Database size={18} />
+                    </div>
+                    <div className={`w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] ${cardClass} p-6 rounded-xl border shadow-sm hover:shadow-md transition-all`}>
+                      <div className="flex items-center justify-between space-x-2 mb-1">
+                        <div className={`font-bold ${headingClass}`}>{job.role}</div>
+                        <time className="font-mono text-xs text-emerald-500">{job.period}</time>
+                      </div>
+                      <div className={`${subHeadingClass} text-sm font-semibold mb-2`}>@ {job.company}</div>
+                      <p className={`${textMutedClass} text-sm mb-3`}>{job.desc}</p>
+                      <div className="flex flex-wrap gap-2">
+                        {job.tags.map(t => (
+                          <span key={t} className={`text-[10px] uppercase tracking-wide border px-2 py-0.5 rounded ${isDarkMode ? 'text-slate-500 border-slate-800' : 'text-slate-500 border-slate-200'}`}>
+                            {t}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </motion.section>
+
+            {/* Core Competencies (Soft Skills) - New */}
+             <motion.section variants={itemVariants}>
+              <h2 className={`text-3xl font-bold mb-8 flex items-center gap-3 ${headingClass}`}>
+                <Users className="text-emerald-500" /> Core Competencies
+              </h2>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {["Problem Solving", "Team Collaboration", "Adaptability", "Project Management"].map((skill, i) => (
+                      <div key={i} className={`${cardClass} p-4 rounded-lg text-center border hover:border-emerald-500 transition-all`}>
+                          <span className={`font-medium ${subHeadingClass}`}>{skill}</span>
+                      </div>
+                  ))}
+              </div>
+            </motion.section>
+
+            {/* Contact Section */}
+            <motion.section variants={itemVariants} id="contact" className={`py-12 border-t ${isDarkMode ? 'border-slate-800' : 'border-slate-200'}`}>
+              <h2 className={`text-3xl font-bold mb-8 text-center ${headingClass}`}>Let's Connect</h2>
+              
+              <div className="grid md:grid-cols-2 gap-12 max-w-4xl mx-auto">
+                {/* Left Column: Info */}
+                <div className="space-y-6">
+                  <p className={`${textMutedClass} text-lg leading-relaxed`}>
+                    I am actively searching for entry-level **DevOps** or **Software Engineering** positions. 
+                    I am a quick learner and ready to contribute immediately.
+                  </p>
+                  
+                  <div className="space-y-4">
+                    <div className={`flex items-center gap-4 ${subHeadingClass}`}>
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center border text-emerald-500 ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+                        <Mail size={20} />
+                      </div>
+                      <span>{PERSONAL_INFO.email}</span>
+                    </div>
+                    <div className={`flex items-center gap-4 ${subHeadingClass}`}>
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center border text-emerald-500 ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+                        <MapPin size={20} />
+                      </div>
+                      <span>{PERSONAL_INFO.location}</span>
+                    </div>
+                    <div className="flex gap-4 pt-4">
+                       <a href={PERSONAL_INFO.github} target="_blank" className={`p-3 rounded-lg border transition-all ${isDarkMode ? 'bg-slate-900 border-slate-800 hover:border-emerald-500 hover:text-emerald-400' : 'bg-white border-slate-200 hover:border-emerald-500 hover:text-emerald-600'}`}>
+                          <Github size={20} />
+                       </a>
+                       <a href={PERSONAL_INFO.linkedin} target="_blank" className={`p-3 rounded-lg border transition-all ${isDarkMode ? 'bg-slate-900 border-slate-800 hover:border-emerald-500 hover:text-emerald-400' : 'bg-white border-slate-200 hover:border-emerald-500 hover:text-emerald-600'}`}>
+                          <Linkedin size={20} />
+                       </a>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right Column: Form */}
+                <form className={`space-y-4 ${cardClass} p-6 rounded-xl border shadow-xl`}>
+                  <div>
+                    <label className={`block text-sm font-medium mb-1 ${textMutedClass}`}>Recruiter / Company Name</label>
+                    <input type="text" className={`w-full rounded-lg px-4 py-2 focus:ring-2 focus:ring-emerald-500 focus:outline-none transition-all ${inputClass}`} placeholder="HR Manager" />
+                  </div>
+                  <div>
+                    <label className={`block text-sm font-medium mb-1 ${textMutedClass}`}>Email</label>
+                    <input type="email" className={`w-full rounded-lg px-4 py-2 focus:ring-2 focus:ring-emerald-500 focus:outline-none transition-all ${inputClass}`} placeholder="hr@company.com" />
+                  </div>
+                  <div>
+                    <label className={`block text-sm font-medium mb-1 ${textMutedClass}`}>Message</label>
+                    <textarea rows={4} className={`w-full rounded-lg px-4 py-2 focus:ring-2 focus:ring-emerald-500 focus:outline-none transition-all ${inputClass}`} placeholder="We would like to interview you..."></textarea>
+                  </div>
+                  <button type="button" className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-lg transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-900/20">
+                    Send Message <Send size={18} />
+                  </button>
+                </form>
+              </div>
+            </motion.section>
+
+          </motion.div>
+        ) : (
+          // DASHBOARD VIEW
+          <motion.div 
+            key="dashboard"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ duration: 0.3 }}
+          >
+             <div className="flex items-center justify-between mb-8">
+                <div>
+                  <h1 className={`text-2xl font-bold ${headingClass}`}>Infrastructure Status</h1>
+                  <p className={`${textMutedClass} text-sm`}>Simulated Environment: Vercel Edge Network</p>
+                </div>
+                <div className="flex items-center gap-2 text-xs font-mono bg-emerald-500/10 text-emerald-500 px-3 py-1 rounded-full border border-emerald-500/20">
+                   <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+                   MONITORING ACTIVE
+                </div>
+             </div>
+
+             {/* Top Metrics */}
+             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                <MetricCard label="Server Load" value={`${metrics.cpu}%`} unit="vCPU" trend={2.4} isDark={isDarkMode} />
+                <MetricCard label="Memory" value={`${metrics.mem}%`} unit="RAM" trend={-0.5} isDark={isDarkMode} />
+                <MetricCard label="Traffic" value={metrics.req} unit="req/s" trend={12} color="text-blue-500" isDark={isDarkMode} />
+                <MetricCard label="Success Rate" value="99.9%" unit="200 OK" color="text-emerald-500" isDark={isDarkMode} />
+             </div>
+
+             {/* Pipeline Visualization */}
+             <div className={`${cardClass} rounded-xl border p-6 mb-8 shadow-lg`}>
+                <h3 className={`${subHeadingClass} text-sm font-semibold mb-6 flex items-center gap-2`}>
+                  <GitBranch size={16} /> CI/CD Pipeline Status (GitHub Actions)
+                </h3>
+                <div className="flex flex-wrap items-center gap-4">
+                   <PipelineStep label="Push" status="success" duration="Just now" isDark={isDarkMode} />
+                   <div className={`h-0.5 w-6 ${isDarkMode ? 'bg-slate-700' : 'bg-slate-300'}`}></div>
+                   <PipelineStep label="ESLint" status="success" duration="12s" isDark={isDarkMode} />
+                   <div className={`h-0.5 w-6 ${isDarkMode ? 'bg-slate-700' : 'bg-slate-300'}`}></div>
+                   <PipelineStep label="Build" status="success" duration="45s" isDark={isDarkMode} />
+                   <div className={`h-0.5 w-6 ${isDarkMode ? 'bg-slate-700' : 'bg-slate-300'}`}></div>
+                   <PipelineStep label="Dockerize" status="running" duration="Building..." isDark={isDarkMode} />
+                   <div className={`h-0.5 w-6 border-t border-dashed ${isDarkMode ? 'bg-slate-700 border-slate-500' : 'bg-slate-300 border-slate-400'}`}></div>
+                   <PipelineStep label="Deploy" status="pending" isDark={isDarkMode} />
+                </div>
+             </div>
+
+             <div className="grid md:grid-cols-2 gap-8">
+                {/* Deployments */}
+                <div className={`${cardClass} rounded-xl border p-6 shadow-lg`}>
+                   <h3 className={`${subHeadingClass} text-sm font-semibold mb-4`}>Latest Deployments</h3>
+                   <div className="space-y-4">
+                      {[1,2,3].map((_,i) => (
+                         <div key={i} className={`flex items-center justify-between text-sm border-b pb-2 last:border-0 ${isDarkMode ? 'border-slate-800' : 'border-slate-200'}`}>
+                            <div className="flex items-center gap-3">
+                               <div className={`w-2 h-2 rounded-full ${i === 0 ? 'bg-yellow-500 animate-pulse' : 'bg-emerald-500'}`}></div>
+                               <span className={`${subHeadingClass} font-mono`}>Production-v{3.0 - i}</span>
+                            </div>
+                            <span className={`${textMutedClass} text-xs`}>{i === 0 ? 'In Progress...' : `${i*4}h ago`}</span>
+                         </div>
+                      ))}
+                   </div>
+                </div>
+
+                {/* Terminal/Logs */}
+                <div className="flex flex-col">
+                   <h3 className={`${subHeadingClass} text-sm font-semibold mb-4`}>Real-time Build Logs</h3>
+                   <LogViewer isDark={isDarkMode} />
+                </div>
+             </div>
+          </motion.div>
+        )}
+        </AnimatePresence>
+      </main>
+    </div>
+  );
+}
