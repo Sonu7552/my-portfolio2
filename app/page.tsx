@@ -119,7 +119,8 @@ const itemVariants = {
   visible: { 
     y: 0, 
     opacity: 1,
-    transition: { type: "spring", stiffness: 100 }
+    // FIX: Added "as const" here to satisfy TypeScript
+    transition: { type: "spring" as const, stiffness: 100 } 
   }
 };
 
@@ -257,6 +258,13 @@ export default function Portfolio() {
   const [activeSection, setActiveSection] = useState('portfolio');
   const [metrics, setMetrics] = useState({ cpu: 12, mem: 45, req: 120 });
   const [isDarkMode, setIsDarkMode] = useState(true);
+  
+  // Form State
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    message: ''
+  });
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -268,6 +276,24 @@ export default function Portfolio() {
     }, 3000);
     return () => clearInterval(interval);
   }, []);
+
+  // Handle Form Input
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  // Handle Send (Mailto Logic)
+  const handleSend = () => {
+    const { name, email, message } = formData;
+    if (!name || !message) {
+      alert("Please fill in your name and message.");
+      return;
+    }
+    const subject = `Portfolio Contact: ${name}`;
+    const body = `Name: ${name}%0D%0AEmail: ${email}%0D%0A%0D%0AMessage:%0D%0A${message}`;
+    window.location.href = `mailto:${PERSONAL_INFO.email}?subject=${subject}&body=${body}`;
+  };
 
   // --- Helper Classes for Theme ---
   const bgClass = isDarkMode ? "bg-slate-950 text-slate-200 selection:bg-emerald-500/30" : "bg-slate-50 text-slate-800 selection:bg-emerald-500/20";
@@ -590,17 +616,42 @@ export default function Portfolio() {
                 <form className={`space-y-4 ${cardClass} p-6 rounded-xl border shadow-xl`}>
                   <div>
                     <label className={`block text-sm font-medium mb-1 ${textMutedClass}`}>Recruiter / Company Name</label>
-                    <input type="text" className={`w-full rounded-lg px-4 py-2 focus:ring-2 focus:ring-emerald-500 focus:outline-none transition-all ${inputClass}`} placeholder="HR Manager" />
+                    <input 
+                        type="text" 
+                        name="name"
+                        value={formData.name}
+                        onChange={handleInputChange}
+                        className={`w-full rounded-lg px-4 py-2 focus:ring-2 focus:ring-emerald-500 focus:outline-none transition-all ${inputClass}`} 
+                        placeholder="HR Manager" 
+                    />
                   </div>
                   <div>
                     <label className={`block text-sm font-medium mb-1 ${textMutedClass}`}>Email</label>
-                    <input type="email" className={`w-full rounded-lg px-4 py-2 focus:ring-2 focus:ring-emerald-500 focus:outline-none transition-all ${inputClass}`} placeholder="hr@company.com" />
+                    <input 
+                        type="email" 
+                        name="email"
+                        value={formData.email}
+                        onChange={handleInputChange}
+                        className={`w-full rounded-lg px-4 py-2 focus:ring-2 focus:ring-emerald-500 focus:outline-none transition-all ${inputClass}`} 
+                        placeholder="hr@company.com" 
+                    />
                   </div>
                   <div>
                     <label className={`block text-sm font-medium mb-1 ${textMutedClass}`}>Message</label>
-                    <textarea rows={4} className={`w-full rounded-lg px-4 py-2 focus:ring-2 focus:ring-emerald-500 focus:outline-none transition-all ${inputClass}`} placeholder="We would like to interview you..."></textarea>
+                    <textarea 
+                        rows={4} 
+                        name="message"
+                        value={formData.message}
+                        onChange={handleInputChange}
+                        className={`w-full rounded-lg px-4 py-2 focus:ring-2 focus:ring-emerald-500 focus:outline-none transition-all ${inputClass}`} 
+                        placeholder="We would like to interview you..."
+                    ></textarea>
                   </div>
-                  <button type="button" className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-lg transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-900/20">
+                  <button 
+                    type="button" 
+                    onClick={handleSend}
+                    className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-lg transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-900/20"
+                  >
                     Send Message <Send size={18} />
                   </button>
                 </form>
