@@ -113,21 +113,30 @@ const CHALLENGES = [
   },
   {
     title: "Container Orchestration",
-    icon: <Users size={20} className="text-blue-500" />, // Placeholder icon
+    icon: <Users size={20} className="text-blue-500" />, 
     problem: "Needed to update the application without downtime or port conflicts.",
     solution: "Implemented a Jenkins Pipeline that builds the new Docker image, stops the old container, and spins up the new one mapped to Nginx Port 80."
   }
 ];
 
-// --- Animation Variants ---
+// --- Animation Variants (FIXED TYPE ERROR) ---
+
 const containerVariants = {
   hidden: { opacity: 0 },
-  visible: { opacity: 1, transition: { staggerChildren: 0.1 } }
+  visible: { 
+    opacity: 1, 
+    transition: { staggerChildren: 0.1 } 
+  }
 };
 
+// FIX: Added 'as const' to satisfy TypeScript strict checking on Vercel
 const itemVariants = {
   hidden: { y: 20, opacity: 0 },
-  visible: { y: 0, opacity: 1, transition: { type: "spring", stiffness: 100 } }
+  visible: { 
+    y: 0, 
+    opacity: 1, 
+    transition: { type: "spring" as const, stiffness: 100 } 
+  }
 };
 
 // --- Components ---
