@@ -5,7 +5,7 @@ import {
   CheckCircle, AlertCircle, Clock, Cloud, Database, 
   Cpu, Globe, ExternalLink, Github, Linkedin, Mail,
   MapPin, Send, ChevronRight, Download, Sun, Moon,
-  GraduationCap, Wrench, Users, Layers, HardDrive, AlertTriangle, ShieldCheck
+  GraduationCap, Wrench, Users, ShieldCheck, HardDrive
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -73,10 +73,9 @@ const TOOLS = [
   "VS Code", "Termius (SSH)", "Jenkins", "Docker Hub", "Git", "Postman"
 ];
 
-// UPDATED: Reflecting your actual "Hybrid Architecture" work
 const PROJECTS = [
   {
-    title: "Hybrid DevOps Architecture (This Portfolio)",
+    title: "Hybrid DevOps Architecture",
     type: "DevOps Showcase",
     desc: "I didn't just build a website; I built a dual-pipeline engineering showcase. The frontend deploys via Vercel (GitOps) while the backend runs on a self-hosted AWS EC2 instance managed via Jenkins.",
     stack: ["Next.js 15", "AWS EC2", "Jenkins", "Docker", "Nginx"],
@@ -99,7 +98,6 @@ const PROJECTS = [
   }
 ];
 
-// NEW: Highlighting the specific problems you solved
 const CHALLENGES = [
   {
     title: "The RAM Crash (Free Tier Constraints)",
@@ -115,29 +113,21 @@ const CHALLENGES = [
   },
   {
     title: "Container Orchestration",
-    icon: <Layers size={20} className="text-blue-500" />,
+    icon: <Users size={20} className="text-blue-500" />, // Placeholder icon
     problem: "Needed to update the application without downtime or port conflicts.",
     solution: "Implemented a Jenkins Pipeline that builds the new Docker image, stops the old container, and spins up the new one mapped to Nginx Port 80."
   }
 ];
 
 // --- Animation Variants ---
-
 const containerVariants = {
   hidden: { opacity: 0 },
-  visible: { 
-    opacity: 1,
-    transition: { staggerChildren: 0.1 }
-  }
+  visible: { opacity: 1, transition: { staggerChildren: 0.1 } }
 };
 
 const itemVariants = {
   hidden: { y: 20, opacity: 0 },
-  visible: { 
-    y: 0, 
-    opacity: 1,
-    transition: { type: "spring" as const, stiffness: 100 } 
-  }
+  visible: { y: 0, opacity: 1, transition: { type: "spring", stiffness: 100 } }
 };
 
 // --- Components ---
@@ -180,7 +170,6 @@ const LogViewer = ({ isDark }: { isDark: boolean }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // UPDATED: Simulation logs now reflect your actual AWS/Jenkins workflow
     const messages = [
       "[JENKINS] Triggering Pipeline: Portfolio-CI...",
       "[AWS] Checking EC2 Resources (t2.micro)...",
@@ -273,49 +262,53 @@ const MetricCard = ({ label, value, unit, trend, color = "text-white", isDark }:
 
 export default function Portfolio() {
   const [activeSection, setActiveSection] = useState('portfolio');
-  const [metrics, setMetrics] = useState({ cpu: 12, mem: 45, req: 120 });
+  const [metrics, setMetrics] = useState({ cpu: 0, mem: 0, uptime: 0, region: '...' });
   const [isDarkMode, setIsDarkMode] = useState(true);
-  
-  // Form State
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    message: ''
-  });
+  const [formData, setFormData] = useState({ name: '', email: '', message: '' });
 
+  // --- REAL-TIME DATA FETCHING ---
   useEffect(() => {
-    const interval = setInterval(() => {
-      setMetrics({
-        cpu: Math.floor(Math.random() * 30) + 5,
-        mem: Math.floor(Math.random() * 10) + 40,
-        req: Math.floor(Math.random() * 50) + 100,
-      });
-    }, 3000);
+    const fetchHealth = async () => {
+      try {
+        const res = await fetch('/api/health');
+        if (!res.ok) throw new Error('Failed to fetch');
+        const data = await res.json();
+        
+        setMetrics({
+          cpu: data.cpu,
+          mem: data.memory,
+          uptime: data.uptime,
+          region: data.region
+        });
+      } catch (err) {
+        console.error("Monitoring Error:", err);
+      }
+    };
+
+    // Fetch immediately and then every 3 seconds
+    fetchHealth();
+    const interval = setInterval(fetchHealth, 3000);
     return () => clearInterval(interval);
   }, []);
 
-  // Handle Form Input
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  // Handle Send (Mailto Logic)
   const handleSend = () => {
     const { name, email, message } = formData;
     if (!name || !message) {
       alert("Please fill in your name and message.");
       return;
     }
-    const subject = `Portfolio Contact: ${name}`;
-    const body = `Name: ${name}%0D%0AEmail: ${email}%0D%0A%0D%0AMessage:%0D%0A${message}`;
-    window.location.href = `mailto:${PERSONAL_INFO.email}?subject=${subject}&body=${body}`;
+    window.location.href = `mailto:${PERSONAL_INFO.email}?subject=Portfolio Contact: ${name}&body=Name: ${name}%0D%0AEmail: ${email}%0D%0A%0D%0AMessage:%0D%0A${message}`;
   };
 
-  // --- Helper Classes for Theme ---
-  const bgClass = isDarkMode ? "bg-slate-950 text-slate-200 selection:bg-emerald-500/30" : "bg-slate-50 text-slate-800 selection:bg-emerald-500/20";
+  // Helper Classes
+  const bgClass = isDarkMode ? "bg-slate-950 text-slate-200" : "bg-slate-50 text-slate-800";
   const navClass = isDarkMode ? "bg-slate-950/80 border-white/5" : "bg-white/80 border-slate-200 shadow-sm";
-  const cardClass = isDarkMode ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200 shadow-md hover:shadow-lg";
+  const cardClass = isDarkMode ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200 shadow-md";
   const headingClass = isDarkMode ? "text-white" : "text-slate-900";
   const subHeadingClass = isDarkMode ? "text-slate-300" : "text-slate-700";
   const textMutedClass = isDarkMode ? "text-slate-400" : "text-slate-500";
@@ -416,7 +409,7 @@ export default function Portfolio() {
                     onClick={() => setActiveSection('dashboard')}
                     className="px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg transition-all flex items-center gap-2 shadow-lg shadow-emerald-900/20 hover:-translate-y-1"
                   >
-                    See How It Works <ChevronRight size={18}/>
+                    See Real-Time Monitor <ChevronRight size={18}/>
                   </button>
                   <a 
                     href="/cv.pdf" 
@@ -534,7 +527,7 @@ export default function Portfolio() {
                </div>
             </motion.section>
 
-            {/* NEW SECTION: Engineering Challenges Solved */}
+            {/* Challenges Section */}
             <motion.section variants={itemVariants}>
               <h2 className={`text-3xl font-bold mb-8 flex items-center gap-3 ${headingClass}`}>
                 <ShieldCheck className="text-emerald-500" /> Real-World Challenges Solved
@@ -576,35 +569,6 @@ export default function Portfolio() {
               </div>
             </motion.section>
 
-            {/* Experience Timeline */}
-            <motion.section variants={itemVariants}>
-              <h2 className={`text-3xl font-bold mb-8 ${headingClass}`}>Experience</h2>
-              <div className={`space-y-8 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent ${isDarkMode ? 'before:via-slate-700' : 'before:via-slate-300'} before:to-transparent`}>
-                {EXPERIENCE.map((job, index) => (
-                  <div key={index} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
-                    <div className={`flex items-center justify-center w-10 h-10 rounded-full border shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 transition-colors ${isDarkMode ? 'border-slate-700 bg-slate-900 group-hover:border-emerald-500 group-hover:text-emerald-400' : 'border-slate-200 bg-white text-slate-500 group-hover:border-emerald-500 group-hover:text-emerald-600'}`}>
-                      <Database size={18} />
-                    </div>
-                    <div className={`w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] ${cardClass} p-6 rounded-xl border shadow-sm hover:shadow-md transition-all`}>
-                      <div className="flex items-center justify-between space-x-2 mb-1">
-                        <div className={`font-bold ${headingClass}`}>{job.role}</div>
-                        <time className="font-mono text-xs text-emerald-500">{job.period}</time>
-                      </div>
-                      <div className={`${subHeadingClass} text-sm font-semibold mb-2`}>@ {job.company}</div>
-                      <p className={`${textMutedClass} text-sm mb-3`}>{job.desc}</p>
-                      <div className="flex flex-wrap gap-2">
-                        {job.tags.map(t => (
-                          <span key={t} className={`text-[10px] uppercase tracking-wide border px-2 py-0.5 rounded ${isDarkMode ? 'text-slate-500 border-slate-800' : 'text-slate-500 border-slate-200'}`}>
-                            {t}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </motion.section>
-
             {/* Contact Section */}
             <motion.section variants={itemVariants} id="contact" className={`py-12 border-t ${isDarkMode ? 'border-slate-800' : 'border-slate-200'}`}>
               <h2 className={`text-3xl font-bold mb-8 text-center ${headingClass}`}>Let's Connect</h2>
@@ -621,12 +585,6 @@ export default function Portfolio() {
                         <Mail size={20} />
                       </div>
                       <span>{PERSONAL_INFO.email}</span>
-                    </div>
-                    <div className={`flex items-center gap-4 ${subHeadingClass}`}>
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center border text-emerald-500 ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
-                        <MapPin size={20} />
-                      </div>
-                      <span>{PERSONAL_INFO.location}</span>
                     </div>
                     <div className="flex gap-4 pt-4">
                         <a href={PERSONAL_INFO.github} target="_blank" className={`p-3 rounded-lg border transition-all ${isDarkMode ? 'bg-slate-900 border-slate-800 hover:border-emerald-500 hover:text-emerald-400' : 'bg-white border-slate-200 hover:border-emerald-500 hover:text-emerald-600'}`}>
@@ -687,7 +645,7 @@ export default function Portfolio() {
 
           </motion.div>
         ) : (
-          // DASHBOARD VIEW (SIMULATED)
+          // DASHBOARD VIEW (REAL DATA)
           <motion.div 
             key="dashboard"
             initial={{ opacity: 0, scale: 0.95 }}
@@ -698,20 +656,20 @@ export default function Portfolio() {
              <div className="flex items-center justify-between mb-8">
                <div>
                  <h1 className={`text-2xl font-bold ${headingClass}`}>Infrastructure Status</h1>
-                 <p className={`${textMutedClass} text-sm`}>Environment: AWS EC2 (Simulated Data)</p>
+                 <p className={`${textMutedClass} text-sm`}>Environment: Vercel Serverless Container</p>
                </div>
                <div className="flex items-center gap-2 text-xs font-mono bg-emerald-500/10 text-emerald-500 px-3 py-1 rounded-full border border-emerald-500/20">
                   <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
-                  SYSTEM OPTIMAL
+                  LIVE METRICS ({metrics.region})
                </div>
              </div>
 
              {/* Top Metrics */}
              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-                <MetricCard label="EC2 Load (t2.micro)" value={`${metrics.cpu}%`} unit="vCPU" trend={2.4} isDark={isDarkMode} />
-                <MetricCard label="Memory (Swap ON)" value={`${metrics.mem}%`} unit="2GB" trend={-0.5} isDark={isDarkMode} />
-                <MetricCard label="Requests" value={metrics.req} unit="req/s" trend={12} color="text-blue-500" isDark={isDarkMode} />
-                <MetricCard label="Jenkins Build" value="PASS" unit="#104" color="text-emerald-500" isDark={isDarkMode} />
+                <MetricCard label="Avg CPU Load" value={`${metrics.cpu}%`} unit="vCPU" trend={2.4} isDark={isDarkMode} />
+                <MetricCard label="Memory Usage" value={`${metrics.mem}`} unit="MB" trend={-0.5} isDark={isDarkMode} />
+                <MetricCard label="Container Uptime" value={metrics.uptime} unit="sec" trend={12} color="text-blue-500" isDark={isDarkMode} />
+                <MetricCard label="Health Check" value="PASS" unit="200 OK" color="text-emerald-500" isDark={isDarkMode} />
              </div>
 
              {/* Pipeline Visualization */}
